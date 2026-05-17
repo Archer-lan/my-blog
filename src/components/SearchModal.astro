@@ -1,0 +1,299 @@
+---
+import { t, getLocale, type Locale } from '~/i18n';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale: localeProp } = Astro.props;
+const locale = localeProp ?? getLocale(Astro.url);
+const dict = t(locale);
+
+const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+const pagefindUrl = `${base}/pagefind/pagefind.js`;
+---
+
+<div
+  id="search-modal"
+  class="invisible fixed inset-0 z-[100] opacity-0 transition-opacity duration-150"
+  aria-hidden="true"
+  data-pagefind-url={pagefindUrl}
+  data-i18n-placeholder={dict.search.placeholder}
+  data-i18n-hint={dict.search.hint}
+  data-i18n-loading={dict.search.loading}
+  data-i18n-error={dict.search.error}
+  data-i18n-noresults={dict.search.noResults('@@Q@@')}
+>
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-md" data-search-backdrop></div>
+
+  <div role="dialog" aria-modal="true" aria-label={dict.search.triggerAria} class="relative mx-auto mt-[10vh] flex max-h-[80vh] w-[min(100%-2rem,640px)] flex-col overflow-hidden rounded-2xl border border-[color:var(--color-border-strong)] bg-[#0c0c0e] shadow-2xl">
+    <div class="flex items-center gap-3 border-b border-[color:var(--color-border)] px-5 py-4">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[color:var(--color-fg-subtle)] shrink-0">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-3.5-3.5"/>
+      </svg>
+      <input
+        id="search-input"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder={dict.search.placeholder}
+        class="flex-1 bg-transparent text-base text-[color:var(--color-fg)] outline-none placeholder:text-[color:var(--color-fg-subtle)]"
+      />
+      <button
+        type="button"
+        data-search-close
+        aria-label={dict.search.closeAria}
+        class="rounded-md border border-[color:var(--color-border)] px-2 py-0.5 text-xs text-[color:var(--color-fg-muted)] transition-colors hover:border-[color:var(--color-border-strong)] hover:text-[color:var(--color-fg)]"
+      >Esc</button>
+    </div>
+
+    <div id="search-results" class="flex-1 overflow-y-auto px-2 py-2 text-sm">
+      <p data-search-state="hint" class="px-4 py-8 text-center text-[color:var(--color-fg-subtle)]">{dict.search.hint}</p>
+    </div>
+
+    <div class="border-t border-[color:var(--color-border)] px-5 py-3 text-xs text-[color:var(--color-fg-subtle)]">
+      {dict.search.kbdHint}
+    </div>
+  </div>
+</div>
+
+<script>
+  type PagefindResult = {
+    id: string;
+    data: () => Promise<{
+      url: string;
+      meta: { title?: string };
+      excerpt: string;
+      sub_results?: Array<{ title: string; url: string; excerpt: string }>;
+    }>;
+  };
+  type PagefindModule = {
+    search: (q: string) => Promise<{ results: PagefindResult[] }>;
+    options?: (o: Record<string, unknown>) => Promise<void>;
+  };
+
+  const modal = document.getElementById('search-modal');
+  if (modal) {
+    const input = document.getElementById('search-input') as HTMLInputElement | null;
+    const list = document.getElementById('search-results') as HTMLDivElement | null;
+    const pagefindUrl = modal.dataset.pagefindUrl ?? '/pagefind/pagefind.js';
+    const placeholder = modal.dataset.i18nPlaceholder ?? '';
+    const hintText = modal.dataset.i18nHint ?? '';
+    const loadingText = modal.dataset.i18nLoading ?? '';
+    const errorText = modal.dataset.i18nError ?? '';
+    const noResultsTpl = modal.dataset.i18nNoresults ?? '';
+
+    let pagefind: PagefindModule | null = null;
+    let pagefindLoadError = false;
+    let activeIndex = 0;
+    let lastQuery = '';
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function escapeHtml(s: string) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function loadPagefind(): Promise<PagefindModule | null> {
+      if (pagefind) return pagefind;
+      if (pagefindLoadError) return null;
+      try {
+        // Vite's dev server refuses direct `import("/pagefind/...")` because
+        // files in /public are off-limits to the module pipeline. We fetch
+        // the script as text and import it via a Blob URL — outside Vite's
+        // resolver. But pagefind uses `import.meta.url` to discover where
+        // to fetch its sibling files (pagefind-entry.json, wasm, worker).
+        // After loading via Blob, that URL would be `blob:...`, breaking
+        // relative resolution. So we hard-pin `import.meta.url` to the real
+        // pagefind.js URL before turning the source into a Blob.
+        const res = await fetch(pagefindUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${pagefindUrl}`);
+        const absoluteUrl = new URL(pagefindUrl, window.location.href).href;
+        const code = (await res.text()).replace(
+          /import\.meta\.url/g,
+          JSON.stringify(absoluteUrl)
+        );
+        const blob = new Blob([code], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        let mod: PagefindModule;
+        try {
+          mod = (await import(/* @vite-ignore */ blobUrl)) as PagefindModule;
+        } finally {
+          URL.revokeObjectURL(blobUrl);
+        }
+        if (mod.options) {
+          await mod.options({ excerptLength: 30 });
+        }
+        pagefind = mod;
+        return mod;
+      } catch (e) {
+        console.warn(
+          `[search] Failed to load Pagefind from ${pagefindUrl}. ` +
+            'In dev, run `pnpm dev:search` first. In production, ensure ' +
+            '`pnpm build` ran (which generates dist/pagefind/).',
+          e
+        );
+        pagefindLoadError = true;
+        return null;
+      }
+    }
+
+    function renderState(html: string) {
+      if (list) list.innerHTML = html;
+    }
+
+    function setHint() {
+      renderState(`<p data-search-state="hint" class="px-4 py-8 text-center text-[color:var(--color-fg-subtle)]">${escapeHtml(hintText)}</p>`);
+    }
+
+    function setLoading() {
+      renderState(`<p class="px-4 py-8 text-center text-[color:var(--color-fg-subtle)]">${escapeHtml(loadingText)}</p>`);
+    }
+
+    function setError() {
+      renderState(`<p class="px-4 py-8 text-center text-[color:var(--color-fg-subtle)]">${escapeHtml(errorText)}</p>`);
+    }
+
+    function setNoResults(q: string) {
+      const msg = noResultsTpl.replace('@@Q@@', q);
+      renderState(`<p class="px-4 py-8 text-center text-[color:var(--color-fg-subtle)]">${escapeHtml(msg)}</p>`);
+    }
+
+    async function runSearch(query: string) {
+      const q = query.trim();
+      if (!q) {
+        setHint();
+        return;
+      }
+      if (q === lastQuery) return;
+      lastQuery = q;
+
+      const pf = await loadPagefind();
+      if (!pf) {
+        setError();
+        return;
+      }
+      setLoading();
+      const res = await pf.search(q);
+      if (q !== lastQuery) return;
+      if (res.results.length === 0) {
+        setNoResults(q);
+        return;
+      }
+      const top = await Promise.all(res.results.slice(0, 8).map((r) => r.data()));
+      if (q !== lastQuery) return;
+
+      const html = top
+        .map((d, i) => {
+          const title = escapeHtml(d.meta.title ?? d.url);
+          const excerpt = d.excerpt;
+          return `
+            <a
+              href="${escapeHtml(d.url)}"
+              data-search-result
+              data-index="${i}"
+              class="block rounded-xl px-4 py-3 transition-colors hover:bg-white/[0.04]"
+            >
+              <div class="text-[color:var(--color-fg)] font-medium">${title}</div>
+              <div class="mt-1 line-clamp-2 text-xs text-[color:var(--color-fg-muted)] [&_mark]:bg-transparent [&_mark]:text-[color:var(--color-accent)] [&_mark]:font-medium">${excerpt}</div>
+            </a>
+          `;
+        })
+        .join('');
+      renderState(html);
+      activeIndex = 0;
+      updateActive();
+    }
+
+    function getResults() {
+      return list ? Array.from(list.querySelectorAll<HTMLAnchorElement>('[data-search-result]')) : [];
+    }
+
+    function updateActive() {
+      const items = getResults();
+      items.forEach((el, i) => {
+        const active = i === activeIndex;
+        el.classList.toggle('bg-white/[0.06]', active);
+        el.classList.toggle('outline', active);
+        el.classList.toggle('outline-1', active);
+        el.classList.toggle('outline-[color:var(--color-accent)]/40', active);
+        if (active) el.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    function open() {
+      modal!.classList.remove('invisible', 'opacity-0');
+      modal!.setAttribute('aria-hidden', 'false');
+      document.documentElement.style.overflow = 'hidden';
+      input?.focus();
+      input?.select();
+      void loadPagefind();
+    }
+
+    function close() {
+      modal!.classList.add('invisible', 'opacity-0');
+      modal!.setAttribute('aria-hidden', 'true');
+      document.documentElement.style.overflow = '';
+      if (input) {
+        input.value = '';
+        lastQuery = '';
+      }
+      setHint();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const isOpen = modal!.getAttribute('aria-hidden') === 'false';
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        isOpen ? close() : open();
+        return;
+      }
+      if (e.key === '/' && !isOpen && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        open();
+        return;
+      }
+      if (!isOpen) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+      }
+      const items = getResults();
+      if (items.length === 0) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % items.length;
+        updateActive();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        updateActive();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        items[activeIndex]?.click();
+      }
+    });
+
+    modal.querySelectorAll('[data-search-backdrop],[data-search-close]').forEach((el) => {
+      el.addEventListener('click', close);
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-search-open]').forEach((btn) => {
+      btn.addEventListener('click', () => open());
+    });
+
+    input?.addEventListener('input', () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (input) runSearch(input.value);
+      }, 120);
+    });
+
+    if (placeholder && input && !input.placeholder) input.placeholder = placeholder;
+  }
+</script>

@@ -1,0 +1,68 @@
+---
+import type { Post } from '~/lib/posts';
+import { formatDate, estimateReadingTime } from '~/lib/posts';
+import { t, localizedHref, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  post: Post;
+  featured?: boolean;
+  locale?: Locale;
+}
+
+const { post, featured = false, locale = DEFAULT_LOCALE } = Astro.props;
+const dict = t(locale);
+const href = localizedHref(locale, `/posts/${post.id}`);
+const readingTime = post.data.readingTime ?? estimateReadingTime(post.body ?? '');
+---
+
+<article
+  class:list={[
+    'group relative flex flex-col gap-3 rounded-2xl border border-[color:var(--color-border)] bg-white/[0.015] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--color-border-strong)] hover:bg-white/[0.04]',
+    featured && 'md:col-span-2 md:flex-row md:gap-8 md:p-8',
+  ]}
+>
+  {featured && post.data.cover && (
+    <div class="aspect-[16/9] overflow-hidden rounded-xl bg-white/5 md:w-1/2 md:flex-shrink-0">
+      <img src={post.data.cover} alt="" class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" loading="lazy" />
+    </div>
+  )}
+
+  <div class="flex flex-1 flex-col gap-3">
+    <div class="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[color:var(--color-fg-subtle)]">
+      <span class="rounded-full bg-[color:var(--color-accent)]/10 px-2.5 py-0.5 text-[color:var(--color-accent)] tracking-wider">
+        {post.data.category}
+      </span>
+      <span>{formatDate(post.data.date, dict.dateLocale)}</span>
+      <span>·</span>
+      <span>{dict.post.minRead(readingTime)}</span>
+      {post.data.pinned && (
+        <span class="ml-auto rounded-full border border-[color:var(--color-accent-3)]/30 px-2 py-0.5 text-[10px] text-[color:var(--color-accent-3)]">
+          PINNED
+        </span>
+      )}
+    </div>
+
+    <h3
+      class:list={[
+        'font-medium tracking-tight transition-colors group-hover:text-[color:var(--color-accent)]',
+        featured ? 'text-3xl md:text-4xl' : 'text-xl',
+      ]}
+    >
+      <a href={href} class="before:absolute before:inset-0">
+        {post.data.title}
+      </a>
+    </h3>
+
+    <p class="text-[color:var(--color-fg-muted)] line-clamp-2 leading-relaxed">
+      {post.data.description}
+    </p>
+
+    {post.data.tags.length > 0 && (
+      <div class="mt-2 flex flex-wrap gap-1.5 text-xs text-[color:var(--color-fg-subtle)]">
+        {post.data.tags.slice(0, 4).map((tag) => (
+          <span class="rounded-full bg-white/[0.04] px-2 py-0.5">#{tag}</span>
+        ))}
+      </div>
+    )}
+  </div>
+</article>

@@ -1,0 +1,87 @@
+import type { Dict } from './types';
+
+export const zh: Dict = {
+  htmlLang: 'zh-CN',
+  dateLocale: 'zh-CN',
+  nav: {
+    home: '首页',
+    posts: '文章',
+    categories: '分类',
+    tags: '标签',
+  },
+  home: {
+    eyebrow: 'Notes',
+    titleLine1: '慢思考，',
+    titleLine2: '长写作。',
+    featured: 'Featured',
+    latest: '最新文章',
+    viewAll: '查看全部 →',
+    emptyPosts: '还没有发布过文章。',
+  },
+  archive: {
+    eyebrow: 'Archive',
+    title: '全部文章',
+    countLine: (n: number, page: number, total: number) =>
+      `共 ${n} 篇 · 第 ${page} / ${total} 页`,
+  },
+  tags: {
+    eyebrow: 'Tags',
+    title: '全部标签',
+    count: (n: number) => `共 ${n} 个标签`,
+    backToAll: '← 全部标签',
+    perTagCount: (n: number) => `${n} 篇文章`,
+    empty: '此标签下暂无文章。',
+    emptyAll: '还没有任何标签。',
+  },
+  categories: {
+    eyebrow: 'Categories',
+    title: '全部分类',
+    count: (n: number) => `共 ${n} 个分类`,
+    latestLabel: '最近：',
+    backToAll: '← 全部分类',
+    perCatCount: (n: number) => `${n} 篇文章`,
+    empty: '此分类下暂无文章。',
+    emptyAll: '还没有任何分类。',
+  },
+  post: {
+    minRead: (n: number) => `${n} 分钟阅读`,
+    tocTitle: '目录',
+    backToList: '返回文章列表',
+    updatedAt: (date: string) => `最后更新于 ${date}`,
+    prev: '上一篇（更早）',
+    next: '下一篇（更新）',
+    copy: '复制',
+    copied: '已复制',
+    copyFailed: '失败',
+  },
+  pagination: {
+    prev: '上一页',
+    next: '下一页',
+  },
+  footer: {
+    rights: (year: number, author: string) =>
+      `© ${year} ${author}. All rights reserved.`,
+  },
+  langSwitch: {
+    toEn: 'EN',
+    toZh: '中',
+    ariaToEn: 'Switch to English',
+    ariaToZh: '切换到中文',
+  },
+  search: {
+    triggerAria: '搜索',
+    placeholder: '搜索文章…',
+    hint: '输入关键词开始搜索',
+    empty: '没找到相关文章。',
+    noResults: (q) => `没有匹配 "${q}" 的结果。`,
+    loading: '搜索中…',
+    error: '搜索功能在构建后可用（pnpm build）。',
+    closeAria: '关闭',
+    kbdHint: '↑↓ 选择 · ↵ 打开 · Esc 关闭',
+  },
+  comments: {
+    title: '评论',
+    loading: '加载评论中…',
+    disabledHint: '评论需要在 src/config.ts 里填入 Giscus 的 repoId 与 categoryId。',
+  },
+};

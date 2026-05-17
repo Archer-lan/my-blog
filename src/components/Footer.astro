@@ -1,0 +1,28 @@
+---
+import { SITE, SOCIAL } from '~/config';
+import { t, getLocale, type Locale } from '~/i18n';
+
+interface Props {
+  locale?: Locale;
+}
+const { locale: localeProp } = Astro.props;
+const locale = localeProp ?? getLocale(Astro.url);
+const dict = t(locale);
+
+const year = new Date().getFullYear();
+const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+---
+
+<footer class="mt-32 border-t border-[color:var(--color-border)]">
+  <div class="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12 text-sm text-[color:var(--color-fg-muted)] md:flex-row md:items-center md:justify-between">
+    <div class="flex flex-col gap-1">
+      <span class="text-[color:var(--color-fg)]">{SITE.title}</span>
+      <span class="text-xs">{dict.footer.rights(year, SITE.author)}</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <a href={SOCIAL.github} target="_blank" rel="noopener" class="transition-colors hover:text-[color:var(--color-fg)]">GitHub</a>
+      <span class="text-[color:var(--color-border-strong)]">·</span>
+      <a href={`${base}${SOCIAL.rss}`} class="transition-colors hover:text-[color:var(--color-accent)]">RSS</a>
+    </div>
+  </div>
+</footer>

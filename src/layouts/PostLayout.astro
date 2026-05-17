@@ -1,0 +1,147 @@
+---
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import TOC from '~/components/TOC.astro';
+import PostNav from '~/components/PostNav.astro';
+import CodeCopy from '~/components/CodeCopy.astro';
+import Giscus from '~/components/Giscus.astro';
+import { formatDate, estimateReadingTime, type Post } from '~/lib/posts';
+import { t, localizedHref, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  post: Post;
+  headings: MarkdownHeading[];
+  prev: Post | null;
+  next: Post | null;
+  locale?: Locale;
+  /** If a translation pair exists, link to it from the lang toggle. */
+  altLocaleHref?: string;
+}
+
+const {
+  post,
+  headings,
+  prev,
+  next,
+  locale = DEFAULT_LOCALE,
+  altLocaleHref,
+} = Astro.props;
+const { title, description, date, category, tags, cover } = post.data;
+const dict = t(locale);
+const readingTime = post.data.readingTime ?? estimateReadingTime(post.body ?? '');
+
+const siteOrigin = Astro.site ?? new URL('https://archer-lan.github.io');
+const articleUrl = new URL(Astro.url.pathname, siteOrigin).toString();
+const articleImage = cover
+  ? new URL(cover, siteOrigin).toString()
+  : new URL(`${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/og-default.png`, siteOrigin).toString();
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description,
+  datePublished: date.toISOString(),
+  dateModified: date.toISOString(),
+  inLanguage: dict.htmlLang,
+  url: articleUrl,
+  image: articleImage,
+  keywords: [category, ...tags].join(', '),
+  articleSection: category,
+  author: {
+    '@type': 'Person',
+    name: 'Archer-lan',
+  },
+  publisher: {
+    '@type': 'Person',
+    name: 'Archer-lan',
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': articleUrl,
+  },
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  pageType="article"
+  ogImage={cover}
+  locale={locale}
+  altLocaleHref={altLocaleHref}
+  hideLangToggle={!altLocaleHref}
+  jsonLd={jsonLd}
+>
+  <div class="mx-auto max-w-6xl px-6 pt-16 pb-24" data-pagefind-body>
+    <header class="mx-auto mb-12 max-w-3xl flex flex-col gap-6 border-b border-[color:var(--color-border)] pb-12">
+      <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-[color:var(--color-fg-subtle)]">
+        <a
+          href={localizedHref(locale, `/categories/${category}`)}
+          class="rounded-full bg-[color:var(--color-accent)]/10 px-3 py-1 text-[color:var(--color-accent)] transition-colors hover:bg-[color:var(--color-accent)]/20"
+        >
+          {category}
+        </a>
+        <time datetime={date.toISOString()}>{formatDate(date, dict.dateLocale)}</time>
+        <span>·</span>
+        <span>{dict.post.minRead(readingTime)}</span>
+      </div>
+
+      <h1 class="text-4xl font-medium leading-tight tracking-tight md:text-5xl">
+        {title}
+      </h1>
+
+      <p class="text-lg leading-relaxed text-[color:var(--color-fg-muted)]">
+        {description}
+      </p>
+
+      {tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 text-sm">
+          {tags.map((tag) => (
+            <a
+              href={localizedHref(locale, `/tags/${tag}`)}
+              class="rounded-full border border-[color:var(--color-border)] px-3 py-1 text-[color:var(--color-fg-muted)] transition-colors hover:border-[color:var(--color-accent)]/40 hover:text-[color:var(--color-accent)]"
+            >
+              #{tag}
+            </a>
+          ))}
+        </div>
+      )}
+    </header>
+
+    {cover && (
+      <div class="mx-auto mb-12 max-w-3xl overflow-hidden rounded-2xl">
+        <img src={cover} alt={title} class="w-full" loading="eager" />
+      </div>
+    )}
+
+    <div class="lg:grid lg:grid-cols-[minmax(0,768px)_220px] lg:gap-12 lg:justify-center">
+      <article class="mx-auto w-full max-w-3xl lg:mx-0">
+        <div class="prose-article">
+          <slot />
+        </div>
+
+        <PostNav prev={prev} next={next} locale={locale} />
+
+        <Giscus locale={locale} />
+
+        <div class="mt-10 flex items-center justify-between text-sm text-[color:var(--color-fg-muted)]">
+          <a
+            href={localizedHref(locale, '/posts')}
+            class="inline-flex items-center gap-2 transition-colors hover:text-[color:var(--color-accent)]"
+          >
+            <span aria-hidden="true">←</span>
+            <span>{dict.post.backToList}</span>
+          </a>
+          <span class="text-xs text-[color:var(--color-fg-subtle)]">
+            {dict.post.updatedAt(formatDate(date, dict.dateLocale))}
+          </span>
+        </div>
+      </article>
+
+      <TOC headings={headings} locale={locale} />
+    </div>
+  </div>
+
+  <CodeCopy />
+</BaseLayout>

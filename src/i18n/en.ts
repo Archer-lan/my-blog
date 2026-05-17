@@ -1,0 +1,87 @@
+import type { Dict } from './types';
+
+export const en: Dict = {
+  htmlLang: 'en',
+  dateLocale: 'en-US',
+  nav: {
+    home: 'Home',
+    posts: 'Posts',
+    categories: 'Categories',
+    tags: 'Tags',
+  },
+  home: {
+    eyebrow: 'Notes',
+    titleLine1: 'Think slowly,',
+    titleLine2: 'write long.',
+    featured: 'Featured',
+    latest: 'Latest',
+    viewAll: 'View all →',
+    emptyPosts: 'No posts yet.',
+  },
+  archive: {
+    eyebrow: 'Archive',
+    title: 'All posts',
+    countLine: (n: number, page: number, total: number) =>
+      `${n} posts · page ${page} of ${total}`,
+  },
+  tags: {
+    eyebrow: 'Tags',
+    title: 'All tags',
+    count: (n: number) => `${n} tags in total`,
+    backToAll: '← All tags',
+    perTagCount: (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`,
+    empty: 'No posts under this tag.',
+    emptyAll: 'No tags yet.',
+  },
+  categories: {
+    eyebrow: 'Categories',
+    title: 'All categories',
+    count: (n: number) => `${n} categories in total`,
+    latestLabel: 'Latest: ',
+    backToAll: '← All categories',
+    perCatCount: (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`,
+    empty: 'No posts under this category.',
+    emptyAll: 'No categories yet.',
+  },
+  post: {
+    minRead: (n: number) => `${n} min read`,
+    tocTitle: 'Contents',
+    backToList: 'Back to all posts',
+    updatedAt: (date: string) => `Last updated ${date}`,
+    prev: '← Older',
+    next: 'Newer →',
+    copy: 'Copy',
+    copied: 'Copied',
+    copyFailed: 'Failed',
+  },
+  pagination: {
+    prev: 'Previous',
+    next: 'Next',
+  },
+  footer: {
+    rights: (year: number, author: string) =>
+      `© ${year} ${author}. All rights reserved.`,
+  },
+  langSwitch: {
+    toEn: 'EN',
+    toZh: '中',
+    ariaToEn: 'Switch to English',
+    ariaToZh: 'Switch to Chinese',
+  },
+  search: {
+    triggerAria: 'Search',
+    placeholder: 'Search posts…',
+    hint: 'Type to search',
+    empty: 'No posts found.',
+    noResults: (q) => `No results for "${q}".`,
+    loading: 'Searching…',
+    error: 'Search is available after a production build (pnpm build).',
+    closeAria: 'Close',
+    kbdHint: '↑↓ navigate · ↵ open · Esc close',
+  },
+  comments: {
+    title: 'Comments',
+    loading: 'Loading comments…',
+    disabledHint: 'Comments need Giscus repoId and categoryId in src/config.ts.',
+  },
+};

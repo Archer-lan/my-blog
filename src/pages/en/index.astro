@@ -1,0 +1,86 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ArticleCard from '~/components/ArticleCard.astro';
+import { getPublishedPosts, getPinnedPosts } from '~/lib/posts';
+import { SITE } from '~/config';
+import { t, localizedHref, type Locale } from '~/i18n';
+
+const locale: Locale = 'en';
+const dict = t(locale);
+
+const allPosts = await getPublishedPosts(locale);
+const pinned = await getPinnedPosts(locale);
+const pinnedIds = new Set(pinned.map((p) => p.id));
+const recent = allPosts.filter((p) => !pinnedIds.has(p.id)).slice(0, 6);
+
+const categories = Array.from(
+  new Set(allPosts.map((p) => p.data.category))
+).slice(0, 8);
+---
+
+<BaseLayout locale={locale}>
+  <section class="mx-auto max-w-6xl px-6 pt-20 pb-16 md:pt-28">
+    <p class="mb-6 text-sm uppercase tracking-[0.3em] text-[color:var(--color-accent)]">
+      {SITE.author} · {dict.home.eyebrow}
+    </p>
+    <h1 class="max-w-3xl text-5xl font-medium leading-[1.05] tracking-tight md:text-7xl">
+      {dict.home.titleLine1}<br/>
+      <span class="text-[color:var(--color-fg-muted)]">{dict.home.titleLine2}</span>
+    </h1>
+    <p class="mt-8 max-w-xl text-lg leading-relaxed text-[color:var(--color-fg-muted)]">
+      Notes on engineering, design, and slow thinking.
+    </p>
+
+    {categories.length > 0 && (
+      <div class="mt-10 flex flex-wrap gap-2 text-sm">
+        {categories.map((c) => (
+          <a
+            href={localizedHref(locale, `/categories/${c}`)}
+            class="rounded-full border border-[color:var(--color-border)] px-3 py-1 text-[color:var(--color-fg-muted)] transition-colors hover:border-[color:var(--color-accent)]/40 hover:text-[color:var(--color-accent)]"
+          >
+            {c}
+          </a>
+        ))}
+      </div>
+    )}
+  </section>
+
+  {pinned.length > 0 && (
+    <section class="mx-auto max-w-6xl px-6 pb-12">
+      <header class="mb-6 flex items-baseline justify-between">
+        <h2 class="text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+          {dict.home.featured}
+        </h2>
+      </header>
+      <div class="grid gap-4 md:grid-cols-2">
+        {pinned.map((post) => (
+          <ArticleCard post={post} featured={pinned.length === 1} locale={locale} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="mx-auto max-w-6xl px-6 pb-24">
+    <header class="mb-6 flex items-baseline justify-between">
+      <h2 class="text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+        {dict.home.latest}
+      </h2>
+      <a
+        href={localizedHref(locale, '/posts')}
+        class="text-sm text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-accent)]"
+      >
+        {dict.home.viewAll}
+      </a>
+    </header>
+
+    {recent.length === 0 ? (
+      <p class="rounded-2xl border border-dashed border-[color:var(--color-border)] p-12 text-center text-[color:var(--color-fg-muted)]">
+        {dict.home.emptyPosts}
+      </p>
+    ) : (
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {recent.map((post) => <ArticleCard post={post} locale={locale} />)}
+      </div>
+    )}
+  </section>
+</BaseLayout>

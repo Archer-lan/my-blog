@@ -1,0 +1,92 @@
+---
+import { GISCUS, isGiscusEnabled } from '~/config';
+import { t, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = DEFAULT_LOCALE } = Astro.props;
+const dict = t(locale);
+const enabled = isGiscusEnabled();
+const giscusLang = locale === 'zh' ? 'zh-CN' : 'en';
+---
+
+<section
+  id="comments"
+  class="mt-20 border-t border-[color:var(--color-border)] pt-12"
+>
+  <h2 class="mb-6 text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+    {dict.comments.title}
+  </h2>
+
+  {enabled ? (
+    <div
+      id="giscus-host"
+      class="giscus min-h-[100px]"
+      data-giscus-theme={GISCUS.theme}
+      data-giscus-lang={giscusLang}
+    >
+      <p class="text-sm text-[color:var(--color-fg-subtle)]">{dict.comments.loading}</p>
+    </div>
+  ) : (
+    <p class="rounded-2xl border border-dashed border-[color:var(--color-border)] p-6 text-sm text-[color:var(--color-fg-muted)]">
+      {dict.comments.disabledHint}
+    </p>
+  )}
+</section>
+
+{enabled && (
+  <script
+    is:inline
+    src="https://giscus.app/client.js"
+    data-repo={GISCUS.repo}
+    data-repo-id={GISCUS.repoId}
+    data-category={GISCUS.category}
+    data-category-id={GISCUS.categoryId}
+    data-mapping={GISCUS.mapping}
+    data-strict={GISCUS.strict}
+    data-reactions-enabled={GISCUS.reactionsEnabled}
+    data-emit-metadata={GISCUS.emitMetadata}
+    data-input-position={GISCUS.inputPosition}
+    data-theme={GISCUS.theme}
+    data-lang={giscusLang}
+    data-loading="lazy"
+    crossorigin="anonymous"
+    async
+  />
+)}
+
+{enabled && (
+  <script>
+    {/*
+      Sync giscus iframe theme when the site's `dark` class flips.
+      We watch <html> for class changes and post the new theme to the
+      giscus iframe via the documented postMessage protocol.
+    */}
+    const TARGET_ORIGIN = 'https://giscus.app';
+    function currentTheme(): 'dark' | 'light' {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+    function postTheme() {
+      const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+      if (!frame?.contentWindow) return;
+      frame.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: currentTheme() } } },
+        TARGET_ORIGIN
+      );
+    }
+    const observer = new MutationObserver(postTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    // Giscus dispatches its own event once the iframe is ready; align theme then too.
+    window.addEventListener('message', (event) => {
+      if (event.origin !== TARGET_ORIGIN) return;
+      if (!event.data || typeof event.data !== 'object') return;
+      const data = event.data as { giscus?: { discussion?: unknown } };
+      if (data.giscus?.discussion) postTheme();
+    });
+  </script>
+)}

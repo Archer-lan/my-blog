@@ -1,0 +1,37 @@
+---
+import { t, getLocale, localizedHref, type Locale } from '~/i18n';
+
+interface Props {
+  /**
+   * If on a post detail page that has a translation pair, pass the alt locale
+   * slug here so the toggle links directly to the translated article.
+   * Otherwise the toggle flips between the locale roots.
+   */
+  altHref?: string;
+  /** Force the current locale, useful when computed at page level. */
+  locale?: Locale;
+  /** Hide the toggle entirely (e.g. when a post has no translation). */
+  hidden?: boolean;
+}
+
+const { altHref, locale, hidden = false } = Astro.props;
+const current = locale ?? getLocale(Astro.url);
+const target: Locale = current === 'zh' ? 'en' : 'zh';
+const dict = t(current);
+
+const fallbackHref = localizedHref(target, '/');
+const href = altHref ?? fallbackHref;
+const label = target === 'en' ? dict.langSwitch.toEn : dict.langSwitch.toZh;
+const aria = target === 'en' ? dict.langSwitch.ariaToEn : dict.langSwitch.ariaToZh;
+---
+
+{!hidden && (
+  <a
+    href={href}
+    aria-label={aria}
+    title={aria}
+    class="inline-flex size-9 items-center justify-center rounded-full border border-[color:var(--color-border)] text-xs font-medium text-[color:var(--color-fg-muted)] transition-colors hover:border-[color:var(--color-border-strong)] hover:text-[color:var(--color-fg)]"
+  >
+    {label}
+  </a>
+)}

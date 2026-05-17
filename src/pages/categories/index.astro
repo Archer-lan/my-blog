@@ -1,0 +1,57 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getCategoryGroups, formatDate } from '~/lib/posts';
+import { t, localizedHref, type Locale } from '~/i18n';
+
+const locale: Locale = 'zh';
+const dict = t(locale);
+const groups = await getCategoryGroups(locale);
+---
+
+<BaseLayout title={dict.categories.title} description={dict.categories.title} locale={locale}>
+  <section class="mx-auto max-w-6xl px-6 pt-20 pb-24">
+    <header class="mb-12 border-b border-[color:var(--color-border)] pb-8">
+      <p class="mb-3 text-xs uppercase tracking-[0.3em] text-[color:var(--color-accent)]">
+        {dict.categories.eyebrow}
+      </p>
+      <h1 class="text-4xl font-medium tracking-tight md:text-5xl">{dict.categories.title}</h1>
+      <p class="mt-3 text-[color:var(--color-fg-muted)]">
+        {dict.categories.count(groups.length)}
+      </p>
+    </header>
+
+    {groups.length === 0 ? (
+      <p class="rounded-2xl border border-dashed border-[color:var(--color-border)] p-12 text-center text-[color:var(--color-fg-muted)]">
+        {dict.categories.emptyAll}
+      </p>
+    ) : (
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {groups.map((g) => {
+          const latest = g.posts[0];
+          return (
+            <a
+              href={localizedHref(locale, `/categories/${encodeURIComponent(g.name)}`)}
+              class="group flex flex-col gap-3 rounded-2xl border border-[color:var(--color-border)] bg-white/[0.015] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--color-border-strong)] hover:bg-white/[0.04]"
+            >
+              <div class="flex items-baseline justify-between">
+                <h2 class="text-xl font-medium tracking-tight transition-colors group-hover:text-[color:var(--color-accent)]">
+                  {g.name}
+                </h2>
+                <span class="text-sm text-[color:var(--color-fg-subtle)]">{g.count}</span>
+              </div>
+              {latest && (
+                <p class="text-sm text-[color:var(--color-fg-muted)]">
+                  <span class="text-[color:var(--color-fg-subtle)]">{dict.categories.latestLabel}</span>
+                  {latest.data.title}
+                  <span class="block text-xs text-[color:var(--color-fg-subtle)] mt-1">
+                    {formatDate(latest.data.date, dict.dateLocale)}
+                  </span>
+                </p>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    )}
+  </section>
+</BaseLayout>

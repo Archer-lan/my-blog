@@ -1,0 +1,55 @@
+---
+// Wraps every <pre> in markdown with a relative container and adds a copy
+// button + language label. Runs once on initial load + on Astro view transitions.
+---
+
+<script>
+  function enhanceCodeBlocks() {
+    const pres = document.querySelectorAll<HTMLPreElement>('article pre.astro-code, article pre:has(> code)');
+    pres.forEach((pre) => {
+      if (pre.dataset.enhanced === '1') return;
+      pre.dataset.enhanced = '1';
+      pre.classList.add('group/code');
+      pre.style.position = 'relative';
+
+      const codeEl = pre.querySelector('code');
+      const langMatch = codeEl?.className.match(/language-([\w-]+)/);
+      const lang = langMatch?.[1];
+
+      if (lang && lang !== 'text' && lang !== 'plain') {
+        const label = document.createElement('span');
+        label.textContent = lang;
+        label.className =
+          'absolute left-4 top-2 select-none text-[10px] uppercase tracking-wider text-zinc-500';
+        pre.appendChild(label);
+      }
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', '复制代码');
+      btn.className =
+        'absolute right-2 top-2 inline-flex h-7 items-center gap-1 rounded-md border border-white/10 bg-zinc-900/80 px-2 text-xs text-zinc-300 opacity-0 backdrop-blur transition-all hover:border-white/20 hover:text-zinc-50 group-hover/code:opacity-100 focus:opacity-100';
+      btn.innerHTML = '<span>复制</span>';
+
+      btn.addEventListener('click', async () => {
+        const text = codeEl?.innerText ?? '';
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.innerHTML = '<span>已复制</span>';
+          btn.classList.add('!text-[color:var(--color-accent)]', '!border-[color:var(--color-accent)]/40');
+          setTimeout(() => {
+            btn.innerHTML = '<span>复制</span>';
+            btn.classList.remove('!text-[color:var(--color-accent)]', '!border-[color:var(--color-accent)]/40');
+          }, 1500);
+        } catch {
+          btn.innerHTML = '<span>失败</span>';
+        }
+      });
+
+      pre.appendChild(btn);
+    });
+  }
+
+  enhanceCodeBlocks();
+  document.addEventListener('astro:page-load', enhanceCodeBlocks);
+</script>

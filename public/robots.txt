@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://archer-lan.github.io/my-blog/sitemap-index.xml

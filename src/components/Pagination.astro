@@ -1,0 +1,89 @@
+---
+import { t, getLocale, type Locale } from '~/i18n';
+
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseHref: string;
+  locale?: Locale;
+}
+
+const { currentPage, totalPages, baseHref, locale: localeProp } = Astro.props;
+const locale = localeProp ?? getLocale(Astro.url);
+const dict = t(locale);
+
+const pageHref = (page: number) => {
+  if (page === 1) return baseHref;
+  return `${baseHref.replace(/\/$/, '')}/page/${page}`;
+};
+
+const prev = currentPage > 1 ? pageHref(currentPage - 1) : null;
+const next = currentPage < totalPages ? pageHref(currentPage + 1) : null;
+
+const pages: (number | '…')[] = [];
+const push = (v: number | '…') => {
+  if (pages[pages.length - 1] !== v) pages.push(v);
+};
+push(1);
+for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+  if (i > 1 && i < totalPages) {
+    if (pages[pages.length - 1] !== i - 1 && pages[pages.length - 1] !== '…' && pages[pages.length - 1] !== 1) {
+      push('…');
+    } else if (i > 2 && pages[pages.length - 1] === 1) {
+      push('…');
+    }
+    push(i);
+  }
+}
+if (totalPages > 1) {
+  if (pages[pages.length - 1] !== totalPages - 1 && pages[pages.length - 1] !== '…') push('…');
+  push(totalPages);
+}
+---
+
+{totalPages > 1 && (
+  <nav class="mt-16 flex items-center justify-between border-t border-[color:var(--color-border)] pt-8 text-sm" aria-label="pagination">
+    <div>
+      {prev ? (
+        <a href={prev} class="inline-flex items-center gap-2 text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-accent)]">
+          <span aria-hidden="true">←</span> {dict.pagination.prev}
+        </a>
+      ) : (
+        <span class="inline-flex items-center gap-2 text-[color:var(--color-fg-subtle)]"><span aria-hidden="true">←</span> {dict.pagination.prev}</span>
+      )}
+    </div>
+
+    <ul class="hidden items-center gap-1 sm:flex">
+      {pages.map((p) =>
+        p === '…' ? (
+          <li class="px-2 text-[color:var(--color-fg-subtle)]">…</li>
+        ) : (
+          <li>
+            <a
+              href={pageHref(p)}
+              aria-current={p === currentPage ? 'page' : undefined}
+              class:list={[
+                'inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-colors',
+                p === currentPage
+                  ? 'bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)]'
+                  : 'text-[color:var(--color-fg-muted)] hover:bg-white/[0.04] hover:text-[color:var(--color-fg)]',
+              ]}
+            >
+              {p}
+            </a>
+          </li>
+        )
+      )}
+    </ul>
+
+    <div>
+      {next ? (
+        <a href={next} class="inline-flex items-center gap-2 text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-accent)]">
+          {dict.pagination.next} <span aria-hidden="true">→</span>
+        </a>
+      ) : (
+        <span class="inline-flex items-center gap-2 text-[color:var(--color-fg-subtle)]">{dict.pagination.next} <span aria-hidden="true">→</span></span>
+      )}
+    </div>
+  </nav>
+)}

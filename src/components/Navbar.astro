@@ -1,0 +1,89 @@
+---
+import { SITE } from '~/config';
+import LangToggle from '~/components/LangToggle.astro';
+import { t, getLocale, localizedHref, type Locale } from '~/i18n';
+
+interface Props {
+  /** Override the detected locale (e.g. on post detail pages). */
+  locale?: Locale;
+  /** Direct link to the alternate-locale version of the current page. */
+  altLocaleHref?: string;
+  /** Hide the lang toggle (e.g. if no translation exists). */
+  hideLangToggle?: boolean;
+}
+
+const { locale: localeProp, altLocaleHref, hideLangToggle } = Astro.props;
+const locale = localeProp ?? getLocale(Astro.url);
+const dict = t(locale);
+
+const items = [
+  { href: '/', label: dict.nav.home },
+  { href: '/posts', label: dict.nav.posts },
+  { href: '/categories', label: dict.nav.categories },
+  { href: '/tags', label: dict.nav.tags },
+];
+
+const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+const stripped = Astro.url.pathname.replace(base, '') || '/';
+const innerPath = stripped.replace(/^\/en\/?/, '/') || '/';
+---
+
+<header class="sticky top-0 z-50 border-b border-[color:var(--color-border)] bg-[color:var(--color-bg)]/80 backdrop-blur-xl">
+  <nav class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+    <a href={localizedHref(locale, '/')} class="group flex items-center gap-2">
+      <span class="inline-block size-2 rounded-full bg-[color:var(--color-accent)] shadow-[0_0_12px] shadow-[color:var(--color-accent)] transition-transform group-hover:scale-125"></span>
+      <span class="font-medium tracking-tight">{SITE.title}</span>
+    </a>
+
+    <ul class="hidden items-center gap-1 text-sm md:flex">
+      {items.map((item) => {
+        const active = item.href === '/'
+          ? innerPath === '/'
+          : innerPath.startsWith(item.href);
+        return (
+          <li>
+            <a
+              href={localizedHref(locale, item.href)}
+              class:list={[
+                'rounded-full px-3 py-1.5 transition-colors',
+                active
+                  ? 'bg-white/[0.06] text-[color:var(--color-fg)]'
+                  : 'text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]',
+              ]}
+            >
+              {item.label}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+
+    <div class="flex items-center gap-2 text-sm text-[color:var(--color-fg-muted)]">
+      <button
+        type="button"
+        data-search-open
+        aria-label={dict.search.triggerAria}
+        title={`${dict.search.triggerAria}  (⌘K)`}
+        class="hidden h-9 items-center gap-2 rounded-full border border-[color:var(--color-border)] pl-3 pr-1.5 transition-colors hover:border-[color:var(--color-border-strong)] hover:text-[color:var(--color-fg)] md:inline-flex"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m20 20-3.5-3.5"/>
+        </svg>
+        <kbd class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--color-fg-subtle)]">⌘K</kbd>
+      </button>
+      <button
+        type="button"
+        data-search-open
+        aria-label={dict.search.triggerAria}
+        class="inline-flex size-9 items-center justify-center rounded-full border border-[color:var(--color-border)] transition-colors hover:border-[color:var(--color-border-strong)] hover:text-[color:var(--color-fg)] md:hidden"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m20 20-3.5-3.5"/>
+        </svg>
+      </button>
+      <LangToggle locale={locale} altHref={altLocaleHref} hidden={hideLangToggle} />
+    </div>
+  </nav>
+</header>

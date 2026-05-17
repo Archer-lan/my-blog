@@ -1,0 +1,92 @@
+---
+import type { MarkdownHeading } from 'astro';
+import { t, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  headings: MarkdownHeading[];
+  locale?: Locale;
+}
+
+const { headings, locale = DEFAULT_LOCALE } = Astro.props;
+const dict = t(locale);
+const items = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+---
+
+{items.length > 0 && (
+  <aside class="hidden lg:block" aria-label={dict.post.tocTitle}>
+    <div class="sticky top-24">
+      <p class="mb-4 text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+        {dict.post.tocTitle}
+      </p>
+      <ul class="toc-list space-y-2 border-l border-[color:var(--color-border)] text-sm">
+        {items.map((h) => (
+          <li
+            class:list={[
+              'border-l-2 border-transparent pl-4 -ml-px transition-colors',
+              h.depth === 3 && 'pl-8',
+            ]}
+            data-toc-item={h.slug}
+          >
+            <a
+              href={`#${h.slug}`}
+              class="block py-0.5 text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-fg)]"
+            >
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </aside>
+)}
+
+<script>
+  const items = document.querySelectorAll<HTMLLIElement>('[data-toc-item]');
+  if (items.length > 0) {
+    const slugMap = new Map<string, HTMLLIElement>();
+    items.forEach((el) => {
+      const slug = el.dataset.tocItem;
+      if (slug) slugMap.set(slug, el);
+    });
+
+    const headings = Array.from(slugMap.keys())
+      .map((slug) => document.getElementById(slug))
+      .filter((el): el is HTMLElement => el !== null);
+
+    const setActive = (slug: string | null) => {
+      items.forEach((el) => {
+        const active = el.dataset.tocItem === slug;
+        el.classList.toggle('border-[color:var(--color-accent)]', active);
+        el.classList.toggle('toc-active', active);
+        const a = el.querySelector('a');
+        if (a) {
+          a.classList.toggle('text-[color:var(--color-accent)]', active);
+          a.classList.toggle('text-[color:var(--color-fg-muted)]', !active);
+        }
+      });
+    };
+
+    let activeSlug: string | null = headings[0]?.id ?? null;
+    setActive(activeSlug);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => e.target as HTMLElement);
+        if (visible.length > 0) {
+          const top = visible.reduce((acc, el) =>
+            el.getBoundingClientRect().top < acc.getBoundingClientRect().top ? el : acc
+          );
+          if (top.id !== activeSlug) {
+            activeSlug = top.id;
+            setActive(activeSlug);
+          }
+        }
+      },
+      { rootMargin: '-80px 0px -70% 0px', threshold: 0 }
+    );
+
+    headings.forEach((h) => observer.observe(h));
+  }
+</script>

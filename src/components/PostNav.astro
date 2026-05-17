@@ -1,0 +1,53 @@
+---
+import type { Post } from '~/lib/posts';
+import { formatDate } from '~/lib/posts';
+import { t, localizedHref, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  prev: Post | null;
+  next: Post | null;
+  locale?: Locale;
+}
+
+const { prev, next, locale = DEFAULT_LOCALE } = Astro.props;
+const dict = t(locale);
+const href = (p: Post) => localizedHref(locale, `/posts/${p.id}`);
+---
+
+{(prev || next) && (
+  <nav class="mt-16 grid gap-4 border-t border-[color:var(--color-border)] pt-10 md:grid-cols-2" aria-label="prev / next">
+    {prev ? (
+      <a
+        href={href(prev)}
+        class="group flex flex-col gap-2 rounded-2xl border border-[color:var(--color-border)] p-5 transition-all hover:-translate-y-0.5 hover:border-[color:var(--color-border-strong)] hover:bg-white/[0.03]"
+      >
+        <span class="text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+          {dict.post.prev}
+        </span>
+        <span class="text-base font-medium text-[color:var(--color-fg)] transition-colors group-hover:text-[color:var(--color-accent)]">
+          {prev.data.title}
+        </span>
+        <span class="text-xs text-[color:var(--color-fg-subtle)]">
+          {formatDate(prev.data.date, dict.dateLocale)}
+        </span>
+      </a>
+    ) : <span class="hidden md:block" />}
+
+    {next ? (
+      <a
+        href={href(next)}
+        class="group flex flex-col gap-2 rounded-2xl border border-[color:var(--color-border)] p-5 text-right transition-all hover:-translate-y-0.5 hover:border-[color:var(--color-border-strong)] hover:bg-white/[0.03]"
+      >
+        <span class="text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+          {dict.post.next}
+        </span>
+        <span class="text-base font-medium text-[color:var(--color-fg)] transition-colors group-hover:text-[color:var(--color-accent)]">
+          {next.data.title}
+        </span>
+        <span class="text-xs text-[color:var(--color-fg-subtle)]">
+          {formatDate(next.data.date, dict.dateLocale)}
+        </span>
+      </a>
+    ) : <span class="hidden md:block" />}
+  </nav>
+)}

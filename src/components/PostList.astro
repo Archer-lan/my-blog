@@ -1,0 +1,25 @@
+---
+import ArticleCard from '~/components/ArticleCard.astro';
+import type { Post } from '~/lib/posts';
+import { t, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  posts: Post[];
+  emptyText?: string;
+  locale?: Locale;
+}
+
+const { posts, emptyText, locale = DEFAULT_LOCALE } = Astro.props;
+const dict = t(locale);
+const empty = emptyText ?? dict.home.emptyPosts;
+---
+
+{posts.length === 0 ? (
+  <p class="rounded-2xl border border-dashed border-[color:var(--color-border)] p-12 text-center text-[color:var(--color-fg-muted)]">
+    {empty}
+  </p>
+) : (
+  <div class="grid gap-4 md:grid-cols-2">
+    {posts.map((post) => <ArticleCard post={post} locale={locale} />)}
+  </div>
+)}

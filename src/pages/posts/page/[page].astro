@@ -1,0 +1,47 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PostList from '~/components/PostList.astro';
+import Pagination from '~/components/Pagination.astro';
+import { getPublishedPosts, POSTS_PER_PAGE } from '~/lib/posts';
+import { t, localizedHref, type Locale } from '~/i18n';
+
+export async function getStaticPaths() {
+  const all = await getPublishedPosts('zh');
+  const totalPages = Math.max(1, Math.ceil(all.length / POSTS_PER_PAGE));
+  const paths = [];
+  for (let p = 2; p <= totalPages; p++) {
+    const start = (p - 1) * POSTS_PER_PAGE;
+    paths.push({
+      params: { page: String(p) },
+      props: {
+        currentPage: p,
+        totalPages,
+        posts: all.slice(start, start + POSTS_PER_PAGE),
+        total: all.length,
+      },
+    });
+  }
+  return paths;
+}
+
+const { currentPage, totalPages, posts, total } = Astro.props;
+const locale: Locale = 'zh';
+const dict = t(locale);
+---
+
+<BaseLayout title={`${dict.archive.title} · page ${currentPage}`} description={dict.archive.title} locale={locale}>
+  <section class="mx-auto max-w-6xl px-6 pt-20 pb-24">
+    <header class="mb-12 border-b border-[color:var(--color-border)] pb-8">
+      <p class="mb-3 text-xs uppercase tracking-[0.3em] text-[color:var(--color-accent)]">
+        {dict.archive.eyebrow}
+      </p>
+      <h1 class="text-4xl font-medium tracking-tight md:text-5xl">{dict.archive.title}</h1>
+      <p class="mt-3 text-[color:var(--color-fg-muted)]">
+        {dict.archive.countLine(total, currentPage, totalPages)}
+      </p>
+    </header>
+
+    <PostList posts={posts} locale={locale} />
+    <Pagination currentPage={currentPage} totalPages={totalPages} baseHref={localizedHref(locale, '/posts')} locale={locale} />
+  </section>
+</BaseLayout>
