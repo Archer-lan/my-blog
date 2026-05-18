@@ -7,13 +7,14 @@ const locale: Locale = 'en';
 const dict = t(locale);
 const groups = await getTagGroups(locale);
 
-const maxCount = Math.max(1, ...groups.map((g) => g.count));
-const sizeFor = (count: number) => {
-  const ratio = count / maxCount;
-  if (ratio > 0.66) return 'text-2xl md:text-3xl';
-  if (ratio > 0.33) return 'text-xl';
-  return 'text-base';
-};
+const sorted = [...groups].sort((a, b) => {
+  if (b.count !== a.count) return b.count - a.count;
+  return a.name.localeCompare(b.name, locale);
+});
+
+const POPULAR_THRESHOLD = 3;
+const popular = sorted.filter((g) => g.count >= POPULAR_THRESHOLD);
+const others = sorted.filter((g) => g.count < POPULAR_THRESHOLD);
 ---
 
 <BaseLayout title={dict.tags.title} description={dict.tags.title} locale={locale}>
@@ -33,25 +34,53 @@ const sizeFor = (count: number) => {
         {dict.tags.emptyAll}
       </p>
     ) : (
-      <ul class="flex flex-wrap items-baseline gap-x-4 gap-y-3">
-        {groups.map((g) => (
-          <li>
-            <a
-              href={localizedHref(locale, `/tags/${encodeURIComponent(g.name)}`)}
-              class:list={[
-                'group inline-flex items-baseline gap-2 transition-colors',
-                'text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]',
-                sizeFor(g.count),
-              ]}
-            >
-              <span>#{g.name}</span>
-              <span class="text-xs text-[color:var(--color-fg-subtle)] group-hover:text-[color:var(--color-accent)]/60">
-                {g.count}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <div class="flex flex-col gap-12">
+        {popular.length > 0 && (
+          <div>
+            <h2 class="mb-5 text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+              {dict.tags.popularHeading}
+            </h2>
+            <ul class="flex flex-wrap gap-2">
+              {popular.map((g) => (
+                <li>
+                  <a
+                    href={localizedHref(locale, `/tags/${encodeURIComponent(g.name)}`)}
+                    class="group inline-flex items-center gap-2 rounded-full border border-[color:var(--color-accent)]/30 bg-[color:var(--color-accent)]/[0.06] px-3.5 py-1.5 text-sm transition-colors hover:border-[color:var(--color-accent)]/60 hover:bg-[color:var(--color-accent)]/[0.12]"
+                  >
+                    <span class="text-[color:var(--color-fg)]">#{g.name}</span>
+                    <span class="rounded-full bg-[color:var(--color-accent)]/15 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--color-accent)] tabular-nums">
+                      {g.count}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {others.length > 0 && (
+          <div>
+            <h2 class="mb-5 text-xs uppercase tracking-[0.3em] text-[color:var(--color-fg-subtle)]">
+              {dict.tags.othersHeading}
+            </h2>
+            <ul class="flex flex-wrap gap-2">
+              {others.map((g) => (
+                <li>
+                  <a
+                    href={localizedHref(locale, `/tags/${encodeURIComponent(g.name)}`)}
+                    class="group inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border)] px-3 py-1 text-sm text-[color:var(--color-fg-muted)] transition-colors hover:border-[color:var(--color-border-strong)] hover:text-[color:var(--color-fg)]"
+                  >
+                    <span>#{g.name}</span>
+                    <span class="text-[10px] text-[color:var(--color-fg-subtle)] tabular-nums">
+                      {g.count}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     )}
   </section>
 </BaseLayout>

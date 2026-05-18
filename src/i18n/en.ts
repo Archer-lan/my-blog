@@ -8,6 +8,7 @@ export const en: Dict = {
     posts: 'Posts',
     categories: 'Categories',
     tags: 'Tags',
+    projects: 'Projects',
   },
   home: {
     eyebrow: 'Notes',
@@ -32,6 +33,17 @@ export const en: Dict = {
     perTagCount: (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`,
     empty: 'No posts under this tag.',
     emptyAll: 'No tags yet.',
+    popularHeading: 'Popular',
+    othersHeading: 'Others',
+  },
+  projects: {
+    eyebrow: 'Projects',
+    title: 'Projects',
+    intro: 'Things I have built, am building, or just started and walked away from.',
+    empty: 'No projects yet.',
+    viewRepo: 'Source →',
+    viewLive: 'Visit →',
+    techLabel: 'Stack',
   },
   categories: {
     eyebrow: 'Categories',

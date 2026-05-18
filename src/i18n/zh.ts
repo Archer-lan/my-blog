@@ -8,6 +8,7 @@ export const zh: Dict = {
     posts: '文章',
     categories: '分类',
     tags: '标签',
+    projects: '项目',
   },
   home: {
     eyebrow: 'Notes',
@@ -32,6 +33,17 @@ export const zh: Dict = {
     perTagCount: (n: number) => `${n} 篇文章`,
     empty: '此标签下暂无文章。',
     emptyAll: '还没有任何标签。',
+    popularHeading: '常用',
+    othersHeading: '其它',
+  },
+  projects: {
+    eyebrow: 'Projects',
+    title: '项目',
+    intro: '一些我做过的、还在做的、或者只是想试一下就停下了的东西。',
+    empty: '还没添加任何项目。',
+    viewRepo: '源码 →',
+    viewLive: '访问 →',
+    techLabel: '技术栈',
   },
   categories: {
     eyebrow: 'Categories',

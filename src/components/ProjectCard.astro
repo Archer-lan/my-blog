@@ -1,0 +1,77 @@
+---
+import type { Project } from '~/data/projects';
+import { t, type Locale, DEFAULT_LOCALE } from '~/i18n';
+
+interface Props {
+  project: Project;
+  locale?: Locale;
+}
+
+const { project, locale = DEFAULT_LOCALE } = Astro.props;
+const dict = t(locale);
+const description = project.description[locale];
+const featured = project.featured === true;
+---
+
+<article
+  class:list={[
+    'group relative flex flex-col gap-4 rounded-2xl border border-[color:var(--color-border)] bg-white/[0.015] p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--color-border-strong)] hover:bg-white/[0.04]',
+    featured && 'md:col-span-2 md:p-8',
+  ]}
+>
+  <header class="flex items-baseline justify-between gap-4">
+    <h2
+      class:list={[
+        'font-medium tracking-tight transition-colors group-hover:text-[color:var(--color-accent)]',
+        featured ? 'text-3xl md:text-4xl' : 'text-xl',
+      ]}
+    >
+      {project.name}
+    </h2>
+    <span class="shrink-0 text-xs uppercase tracking-[0.18em] text-[color:var(--color-fg-subtle)]">
+      {project.year}
+    </span>
+  </header>
+
+  <p
+    class:list={[
+      'leading-relaxed text-[color:var(--color-fg-muted)]',
+      featured ? 'text-base md:text-lg' : 'text-sm',
+    ]}
+  >
+    {description}
+  </p>
+
+  {project.tech.length > 0 && (
+    <ul class="flex flex-wrap gap-1.5 text-xs text-[color:var(--color-fg-subtle)]">
+      {project.tech.map((t) => (
+        <li class="rounded-full bg-white/[0.04] px-2 py-0.5">{t}</li>
+      ))}
+    </ul>
+  )}
+
+  {(project.link || project.repo) && (
+    <footer class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+      {project.link && (
+        <a
+          href={project.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[color:var(--color-accent)] transition-colors hover:text-[color:var(--color-accent-2)]"
+        >
+          {dict.projects.viewLive}
+        </a>
+      )}
+      {project.repo && (
+        <a
+          href={project.repo}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-fg)]"
+        >
+          {dict.projects.viewRepo}
+        </a>
+      )}
+    </footer>
+  )}
+</article>

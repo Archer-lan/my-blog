@@ -1,0 +1,45 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ProjectCard from '~/components/ProjectCard.astro';
+import { projects } from '~/data/projects';
+import { t, localizedHref, type Locale } from '~/i18n';
+
+const locale: Locale = 'zh';
+const dict = t(locale);
+
+const sorted = [...projects].sort((a, b) => {
+  if (a.featured !== b.featured) return a.featured ? -1 : 1;
+  return b.year.localeCompare(a.year);
+});
+
+const altLocaleHref = localizedHref('en', '/projects');
+---
+
+<BaseLayout
+  title={dict.projects.title}
+  description={dict.projects.intro}
+  locale={locale}
+  altLocaleHref={altLocaleHref}
+>
+  <section class="mx-auto max-w-6xl px-6 pt-20 pb-24">
+    <header class="mb-12 border-b border-[color:var(--color-border)] pb-8">
+      <p class="mb-3 text-xs uppercase tracking-[0.3em] text-[color:var(--color-accent)]">
+        {dict.projects.eyebrow}
+      </p>
+      <h1 class="text-4xl font-medium tracking-tight md:text-5xl">{dict.projects.title}</h1>
+      <p class="mt-4 max-w-2xl text-[color:var(--color-fg-muted)] leading-relaxed">
+        {dict.projects.intro}
+      </p>
+    </header>
+
+    {sorted.length === 0 ? (
+      <p class="rounded-2xl border border-dashed border-[color:var(--color-border)] p-12 text-center text-[color:var(--color-fg-muted)]">
+        {dict.projects.empty}
+      </p>
+    ) : (
+      <div class="grid gap-4 md:grid-cols-2">
+        {sorted.map((p) => <ProjectCard project={p} locale={locale} />)}
+      </div>
+    )}
+  </section>
+</BaseLayout>

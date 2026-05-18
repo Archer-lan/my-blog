@@ -6,6 +6,7 @@ export interface Dict {
     posts: string;
     categories: string;
     tags: string;
+    projects: string;
   };
   home: {
     eyebrow: string;
@@ -29,6 +30,17 @@ export interface Dict {
     perTagCount: (n: number) => string;
     empty: string;
     emptyAll: string;
+    popularHeading: string;
+    othersHeading: string;
+  };
+  projects: {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    empty: string;
+    viewRepo: string;
+    viewLive: string;
+    techLabel: string;
   };
   categories: {
     eyebrow: string;
