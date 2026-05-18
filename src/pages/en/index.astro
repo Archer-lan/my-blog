@@ -11,7 +11,7 @@ const dict = t(locale);
 const allPosts = await getPublishedPosts(locale);
 const pinned = await getPinnedPosts(locale);
 const pinnedIds = new Set(pinned.map((p) => p.id));
-const recent = allPosts.filter((p) => !pinnedIds.has(p.id)).slice(0, 6);
+const recent = allPosts.filter((p) => !pinnedIds.has(p.id)).slice(0, 9);
 
 const categories = Array.from(
   new Set(allPosts.map((p) => p.data.category))

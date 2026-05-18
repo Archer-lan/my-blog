@@ -2,7 +2,14 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
+  loader: glob({
+    pattern: '**/*.{md,mdx}',
+    base: './src/content/posts',
+    // Support both `posts/<slug>.md` (text-only) and `posts/<slug>/index.md`
+    // (co-located with images). Both forms resolve to the same URL `<slug>`.
+    generateId: ({ entry }) =>
+      entry.replace(/\.(md|mdx)$/, '').replace(/\/index$/, ''),
+  }),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
